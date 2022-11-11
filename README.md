@@ -5,6 +5,11 @@
   A light-weight job scheduling library for Node.js
 </p>
 
+# Modifications:
+
+* Save support receive ClientSession optionally
+* Delete support receive ClientSession optionally
+
 # Agenda offers
 
 - Minimal overhead. Agenda aims to keep its code base small.

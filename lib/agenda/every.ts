@@ -2,6 +2,7 @@ import createDebugger from "debug";
 import { Agenda } from ".";
 import { Job, JobAttributesData } from "../job";
 import { JobOptions } from "../job/repeat-every";
+import { ClientSession } from 'mongodb'
 
 const debug = createDebugger("agenda:every");
 
@@ -13,6 +14,7 @@ const debug = createDebugger("agenda:every");
  * @param names - String or strings of jobs to schedule
  * @param data - data to run for job
  * @param options - options to run job for
+ * @param session mongodb transaction session (optional)
  * @returns Job/s created. Resolves when schedule fails or passes
  */
 export const every = async function<T extends JobAttributesData> (
@@ -20,7 +22,8 @@ export const every = async function<T extends JobAttributesData> (
   interval: string,
   names: string | string[],
   data?: T,
-  options?: JobOptions
+  options?: JobOptions,
+  session?: ClientSession
 ): Promise<any> {
   /**
    * Internal method to setup job that gets run every interval
@@ -28,19 +31,21 @@ export const every = async function<T extends JobAttributesData> (
    * @param name String job to schedule
    * @param [data] data to run for job
    * @param [options] options to run job for
+   * @param session mongodb transaction session (optional)
    * @returns instance of job
    */
   const createJob = async<T extends JobAttributesData> (
     interval: string,
     name: string,
     data?: T,
-    options?: JobOptions
+    options?: JobOptions,
+    session?: ClientSession
   ): Promise<Job> => {
     const job = this.create(name, data || {});
 
     job.attrs.type = "single";
     job.repeatEvery(interval, options);
-    return job.save();
+    return job.save(session);
   };
 
   /**
@@ -49,17 +54,19 @@ export const every = async function<T extends JobAttributesData> (
    * @param names Strings of jobs to schedule
    * @param [data] data to run for job
    * @param [options] options to run job for
+   * @param session mongodb transaction session (optional)
    * @return array of jobs created
    */
   const createJobs = async (
     interval: string,
     names: string[],
     data?: T,
-    options?: JobOptions
+    options?: JobOptions,
+    session?: ClientSession
   ): Promise<Job[] | undefined> => {
     try {
       const jobs: Array<Promise<Job>> = [];
-      names.map((name) => jobs.push(createJob(interval, name, data, options)));
+      names.map((name) => jobs.push(createJob(interval, name, data, options, session)));
 
       debug("every() -> all jobs created successfully");
 
@@ -72,14 +79,14 @@ export const every = async function<T extends JobAttributesData> (
 
   if (typeof names === "string") {
     debug("Agenda.every(%s, %O, %O)", interval, names, options);
-    const jobs = await createJob(interval, names, data, options);
+    const jobs = await createJob(interval, names, data, options, session);
 
     return jobs;
   }
 
   if (Array.isArray(names)) {
     debug("Agenda.every(%s, %s, %O)", interval, names, options);
-    const jobs = await createJobs(interval, names, data, options);
+    const jobs = await createJobs(interval, names, data, options, session);
 
     return jobs;
   }

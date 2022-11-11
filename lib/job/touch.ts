@@ -1,11 +1,13 @@
 import { Job } from ".";
+import { ClientSession } from 'mongodb'
 
 /**
  * Updates "lockedAt" time so the job does not get picked up again
  * @name Job#touch
  * @function
+ * @param session mongodb transaction session (optional)
  */
-export const touch = async function (this: Job): Promise<Job> {
+export const touch = async function (this: Job, session?:ClientSession): Promise<Job> {
   this.attrs.lockedAt = new Date();
-  return this.save();
+  return this.save(session);
 };

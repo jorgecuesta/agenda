@@ -2,7 +2,10 @@ import createDebugger from "debug";
 import { createJob } from "../utils";
 import { Agenda } from ".";
 import { Job } from "../job";
-import { ReturnDocument } from "mongodb";
+import {
+  ClientSession,
+  ReturnDocument,
+} from 'mongodb'
 
 const debug = createDebugger("agenda:internal:_findAndLockNextJob");
 
@@ -12,13 +15,15 @@ const debug = createDebugger("agenda:internal:_findAndLockNextJob");
  * @function
  * @param jobName name of job to try to lock
  * @param definition definition used to tell how job is run
+ * @param session mongodb transaction session (optional)
  * @access protected
  * @caller jobQueueFilling() only
  */
 export const findAndLockNextJob = async function (
   this: Agenda,
   jobName: string,
-  definition: any
+  definition: any,
+  session?:ClientSession
 ): Promise<Job | undefined> {
   const now = new Date();
   const lockDeadline = new Date(Date.now().valueOf() - definition.lockLifetime);
@@ -54,7 +59,7 @@ export const findAndLockNextJob = async function (
    * Query used to affect what gets returned
    * @type {{returnOriginal: boolean, sort: object}}
    */
-  const JOB_RETURN_QUERY = { returnDocument: ReturnDocument.AFTER, sort: this._sort };
+  const JOB_RETURN_QUERY = { returnDocument: ReturnDocument.AFTER, sort: this._sort, session };
 
   // Find ONE and ONLY ONE job and set the 'lockedAt' time so that job begins to be processed
   const result = await this._collection.findOneAndUpdate(

@@ -1,5 +1,8 @@
 import createDebugger from "debug";
-import { Filter } from "mongodb";
+import {
+  ClientSession,
+  Filter,
+} from 'mongodb'
 import { Agenda } from ".";
 const debug = createDebugger("agenda:enable");
 
@@ -8,18 +11,20 @@ const debug = createDebugger("agenda:enable");
  * @name Agenda#enable
  * @function
  * @param query MongoDB query to use when enabling
+ * @param session mongodb transaction session (optional)
  * @caller client code, Agenda.purge(), Job.remove()
  * @returns {Promise<Number>} A promise that contains the number of removed documents when fulfilled.
  */
 export const enable = async function (
   this: Agenda,
-  query: Filter<unknown> = {}
+  query: Filter<unknown> = {},
+  session?:ClientSession
 ): Promise<number> {
   debug("attempting to enable all jobs matching query", query);
   try {
     const { modifiedCount } = await this._collection.updateMany(query, {
       $set: { disabled: false },
-    });
+    }, { session });
     debug("%s jobs enabled", modifiedCount);
     return modifiedCount;
   } catch (error) {

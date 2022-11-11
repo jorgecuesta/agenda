@@ -1,5 +1,5 @@
 import createDebugger from "debug";
-import { ObjectId } from "mongodb";
+import { ObjectId, ClientSession } from "mongodb";
 import { Agenda } from ".";
 import { Job } from "../job";
 import { processJobs } from "../utils";
@@ -11,9 +11,10 @@ const debug = createDebugger("agenda:saveJob");
  * the job immediately or to let the processJobs() interval pick it up later
  * @param job job instance
  * @param result the data returned from the findOneAndUpdate() call or insertOne() call
+ * @param session mongodb transaction session (optional)
  * @access private
  */
-const processDbResult = async function (this: Agenda, job: Job, result: any) {
+const processDbResult = async function (this: Agenda, job: Job, result: any, session?: ClientSession) {
   debug(
     "processDbResult() called with success, checking whether to process job immediately or not"
   );
@@ -29,7 +30,7 @@ const processDbResult = async function (this: Agenda, job: Job, result: any) {
     if (result.insertedId) {
       _id = result.insertedId;
       // find the doc using _id
-      const _job = await this._collection.findOne({ _id });
+      const _job = await this._collection.findOne({ _id }, {session});
 
       if (_job) {
         nextRunAt = _job.nextRunAt;
@@ -68,9 +69,10 @@ const processDbResult = async function (this: Agenda, job: Job, result: any) {
  * @name Agenda#saveJob
  * @function
  * @param job job to save into MongoDB
+ * @param session mongodb transaction session (optional)
  * @returns resolves when job is saved or errors
  */
-export const saveJob = async function (this: Agenda, job: Job): Promise<Job> {
+export const saveJob = async function (this: Agenda, job: Job, session?: ClientSession): Promise<Job> {
   try {
     debug("attempting to save a job into Agenda instance");
 
@@ -104,7 +106,7 @@ export const saveJob = async function (this: Agenda, job: Job): Promise<Job> {
       const result = await this._collection.findOneAndUpdate(
         { _id: id },
         update,
-        { returnDocument: "after" }
+        { returnDocument: "after", session }
       );
       return await processDbResult.call(this, job, result);
     }
@@ -145,6 +147,7 @@ export const saveJob = async function (this: Agenda, job: Job): Promise<Job> {
         {
           upsert: true,
           returnDocument: "after",
+          session,
         }
       );
       return await processDbResult.call(this, job, result);
@@ -167,6 +170,7 @@ export const saveJob = async function (this: Agenda, job: Job): Promise<Job> {
       const result = await this._collection.findOneAndUpdate(query, update, {
         upsert: true,
         returnDocument: "after",
+        session,
       });
       return await processDbResult.call(this, job, result);
     }
@@ -176,7 +180,7 @@ export const saveJob = async function (this: Agenda, job: Job): Promise<Job> {
       "using default behavior, inserting new job via insertOne() with props that were set: \n%O",
       props
     );
-    const result = await this._collection.insertOne(props);
+    const result = await this._collection.insertOne(props, {session});
     return await processDbResult.call(this, job, result);
   } catch (error) {
     debug("processDbResult() received an error, job was not updated/created");

@@ -1,6 +1,7 @@
 import createDebugger from "debug";
 import { Agenda } from ".";
 import { Job, JobAttributesData } from "../job";
+import { ClientSession } from 'mongodb'
 
 const debug = createDebugger("agenda:now");
 
@@ -10,18 +11,20 @@ const debug = createDebugger("agenda:now");
  * @function
  * @param name name of job to schedule
  * @param data data to pass to job
+ * @param session mongodb transaction session (optional)
  */
 export const now = async function<T extends JobAttributesData> (
   this: Agenda,
   name: string,
-  data: T
+  data: T,
+  session?:ClientSession
 ): Promise<Job> {
   debug("Agenda.now(%s, [Object])", name);
   try {
     const job = this.create(name, data);
 
     job.schedule(new Date());
-    await job.save();
+    await job.save(session);
 
     return job;
   } catch (error) {

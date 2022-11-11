@@ -1,0 +1,1 @@
+{"version":3,"file":"find-and-lock-next-job.d.ts","sourceRoot":"","sources":["../../lib/agenda/find-and-lock-next-job.ts"],"names":[],"mappings":"AAEA,OAAO,EAAE,MAAM,EAAE,MAAM,GAAG,CAAC;AAC3B,OAAO,EAAE,GAAG,EAAE,MAAM,QAAQ,CAAC;AAC7B,OAAO,EACL,aAAa,EAEd,MAAM,SAAS,CAAA;AAIhB;;;;;;;;;GASG;AACH,eAAO,MAAM,kBAAkB,SACvB,MAAM,WACH,MAAM,cACH,GAAG,0CAEd,QAAQ,GAAG,GAAG,SAAS,CAwDzB,CAAC"}

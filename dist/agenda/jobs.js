@@ -18,13 +18,14 @@ const utils_1 = require("../utils");
  * @param [query] object for MongoDB
  * @param [sort] object for MongoDB
  * @param [limit] number of documents to return from MongoDB
- * @param [number] of documents to skip in MongoDB
+ * @param [skip] number of documents to skip in MongoDB
+ * @param session mongodb transaction session (optional)
  * @returns resolves when fails or passes
  */
-const jobs = function (query = {}, sort = {}, limit = 0, skip = 0) {
+const jobs = function (query = {}, sort = {}, limit = 0, skip = 0, session) {
     return __awaiter(this, void 0, void 0, function* () {
         const result = yield this._collection
-            .find(query) // eslint-disable-line
+            .find(query, { session }) // eslint-disable-line
             .sort(sort)
             .limit(limit)
             .skip(skip)
